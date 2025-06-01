@@ -1,10 +1,14 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+from django.db.models import Count
 from .forms import RegisterForm, AppointmentForm
 from .models import Appointment, DOCTOR_LIST
 import json
+
 
 def home_view(request):
     return render(request, 'appointment/home.html')
@@ -71,5 +75,35 @@ def make_appointment(request):
     
 @login_required
 def my_appointments(request):
-    appointments = Appointment.objects.filter(user=request.user).order_by('-date', '-time')
+    appointments = Appointment.objects.filter(user=request.user).order_by('-date', '-time_slot')
     return render(request, 'appointment/my_appointments.html', {'appointments': appointments})
+
+@login_required
+def delete_appointment(request, pk):
+    appointment = get_object_or_404(Appointment, pk=pk, user=request.user)
+    if request.method == 'POST':
+        appointment.delete()
+        return redirect('my_appointments')
+    return render(request, 'appointment/confirm_delete.html', {'appointment': appointment})
+
+@login_required
+def edit_appointment(request, pk):
+    appointment = get_object_or_404(Appointment, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = AppointmentForm(request.POST, instance=appointment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '預約已成功修改！')
+            return redirect('my_appointments')
+    else:
+        form = AppointmentForm(instance=appointment)
+    return render(request, 'appointment/edit_appointment.html', {'form': form, 'appointment': appointment})
+
+def doctor_stats(request):
+    # 依醫師統計掛號數
+    stats = (
+        Appointment.objects.values('doctor', 'department')
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
+    return render(request, 'appointment/doctor_stats.html', {'stats': stats})

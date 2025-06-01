@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="text-center mb-4">醫師掛號統計</h2>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <table class="table table-bordered text-center align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>醫師</th>
+                    <th>科別</th>
+                    <th>掛號數</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in stats %}
+                <tr>
+                    <td>{{ row.doctor }}</td>
+                    <td>{{ row.department }}</td>
+                    <td>{{ row.total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="text-center">
+            <a href="{% url 'home' %}" class="btn btn-outline-primary">回首頁</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

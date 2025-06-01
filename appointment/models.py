@@ -30,13 +30,13 @@ TIME_SLOT_CHOICES = [
 
 class Appointment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    department = models.CharField(max_length=10, choices=DEPARTMENT_CHOICES)
-    doctor = models.CharField(max_length=10)
-    date = models.DateField()
-    time_slot = models.CharField(max_length=4, choices=TIME_SLOT_CHOICES)
-    phone = models.CharField(max_length=20)
-    reason = models.CharField(max_length=200)
-    note = models.TextField(blank=True)
+    department = models.CharField(max_length=10, choices=DEPARTMENT_CHOICES, default='內科')
+    doctor = models.CharField(max_length=10, default='王大明')
+    date = models.DateField(default='2024-01-01')
+    time_slot = models.CharField(max_length=4, choices=TIME_SLOT_CHOICES, default='上午')
+    phone = models.CharField(max_length=20, default='')
+    reason = models.CharField(max_length=200, default='')
+    note = models.TextField(blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
 def __str__(self):
