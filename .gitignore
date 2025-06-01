@@ -1,0 +1,15 @@
+# Django 編譯與靜態檔
+__pycache__/
+*.pyc
+db.sqlite3
+staticfiles/
+media/
+.env
+
+# VSCode、PyCharm 設定檔
+.vscode/
+.idea/
+
+# 系統檔案
+.DS_Store
+Thumbs.db
