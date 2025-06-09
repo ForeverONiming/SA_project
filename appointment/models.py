@@ -28,6 +28,15 @@ TIME_SLOT_CHOICES = [
     ('晚上', '晚上'),
 ]
 
+
+class DoctorProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    department = models.CharField(max_length=20)
+    phone = models.CharField(max_length=20)
+
+    def __str__(self):
+        return f"{self.user.username}（{self.department}）"
+
 class Appointment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     department = models.CharField(max_length=10, choices=DEPARTMENT_CHOICES, default='內科')
@@ -39,5 +48,5 @@ class Appointment(models.Model):
     note = models.TextField(blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
-def __str__(self):
-    return f"{self.user.username} - {self.date} {self.time_slot}"
+    def __str__(self):
+        return f"{self.user.username} - {self.date} {self.time_slot}"

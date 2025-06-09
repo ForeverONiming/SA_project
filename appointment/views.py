@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.db.models import Count
-from .forms import RegisterForm, AppointmentForm
-from .models import Appointment, DOCTOR_LIST
+from .forms import RegisterForm, AppointmentForm, DoctorRegisterForm
+from .models import Appointment, DOCTOR_LIST, DoctorProfile
 import json
 
 
@@ -40,6 +40,39 @@ def logout_view(request):
     logout(request)
     return redirect('home')
 
+def doctor_register(request):
+    if request.method == 'POST':
+        form = DoctorRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # 註冊前先檢查這個 user 是否已有 DoctorProfile
+            if DoctorProfile.objects.filter(user=user).exists():
+                # 已經有，給錯誤訊息
+                messages.error(request, "此帳號已是醫師，請勿重複註冊。")
+                return redirect('doctor_register')
+            # 沒有才新增
+            DoctorProfile.objects.create(
+                user=user,
+                department=form.cleaned_data['department'],
+                phone=form.cleaned_data['phone'],
+            )
+            messages.success(request, '註冊成功')
+            return redirect('login')
+    else:
+        form = DoctorRegisterForm()
+    return render(request, 'appointment/doctor_register.html', {'form': form})
+
+def doctor_required(user):
+    return user.is_superuser or hasattr(user, 'doctorprofile')
+
+@login_required
+@user_passes_test(doctor_required)
+def doctor_dashboard(request):
+    doctor = request.user.doctorprofile
+    # 只顯示這位醫師的預約
+    appointments = Appointment.objects.filter(doctor=doctor.user.username).order_by('-date', '-time_slot')
+    return render(request, 'appointment/doctor_dashboard.html', {'doctor': doctor, 'appointments': appointments})
+
 @login_required
 def make_appointment(request):
     if request.method == 'POST':
@@ -56,6 +89,10 @@ def make_appointment(request):
 
 @login_required
 def make_appointment(request):
+    # 查詢所有醫師，依科別分組
+    doctors_by_dep = {}
+    for d in DoctorProfile.objects.all():
+        doctors_by_dep.setdefault(d.department, []).append(d.user.username)
     if request.method == 'POST':
         form = AppointmentForm(request.POST)
         if form.is_valid():
@@ -66,10 +103,9 @@ def make_appointment(request):
             return redirect('my_appointments')
     else:
         form = AppointmentForm()
-    # 傳 doctor_list_json 給前端
     context = {
-        'form': form,
-        'doctor_list_json': json.dumps(DOCTOR_LIST, ensure_ascii=False)
+        'form': form,  # 用同一個 form 物件
+        'doctor_list_json': json.dumps(doctors_by_dep, ensure_ascii=False),
     }
     return render(request, 'appointment/make_appointment.html', context)
     

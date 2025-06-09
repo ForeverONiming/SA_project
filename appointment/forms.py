@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Appointment
+from .models import Appointment, DoctorProfile
 from .models import Appointment, DEPARTMENT_CHOICES, DOCTOR_LIST, TIME_SLOT_CHOICES
 
 class RegisterForm(UserCreationForm):
@@ -10,6 +10,23 @@ class RegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
+
+class DoctorRegisterForm(UserCreationForm):
+    department = forms.ChoiceField(choices=DEPARTMENT_CHOICES, label="科別", widget=forms.Select(attrs={'class': 'form-select'}))
+    phone = forms.CharField(max_length=20, label="聯絡電話", widget=forms.TextInput(attrs={'class': 'form-control'}))
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+
+    def save(self, commit=True):
+        user = super().save(commit)
+        DoctorProfile.objects.create(
+            user=user,
+            department=self.cleaned_data['department'],
+            phone=self.cleaned_data['phone']
+        )
+        return user
 
 class AppointmentForm(forms.ModelForm):
     class Meta:
